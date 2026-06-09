@@ -6,12 +6,6 @@
   <title>Cottovunque</title>
 
   <link rel="stylesheet" href="style.css">
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- App -->
-  <script src="app.js" defer></script>
 </head>
 
 <body>
@@ -21,23 +15,24 @@
     <h1 class="title">cottovunque</h1>
 
     <p class="manifesto">
-      un archivio libero, fatto dalla comunità e in costante espansione.<br>
-      In nome della tradizione del cotto, della democrazia, delle contraddizioni.
-    </p>
-
-    <p class="cta">
-      cosa aspetti a partecipare? carica la tua foto
+      archivio locale (browser-only version)
     </p>
 
     <div class="upload-section">
+
       <input type="file" id="upload" accept="image/*">
+
       <canvas id="canvas"></canvas>
-      <button id="postBtn">pubblica nell’archivio</button>
+
+      <button id="postBtn">pubblica</button>
+
     </div>
 
     <div id="gallery" class="gallery"></div>
 
   </main>
+
+  <script src="app.js"></script>
 
 </body>
 </html>
