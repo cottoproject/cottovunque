@@ -1,8 +1,5 @@
 window.addEventListener("DOMContentLoaded", () => {
 
-  // -------------------------
-  // SUPABASE INIT
-  // -------------------------
   const supabase = window.supabase.createClient(
     "https://bflcyezzkzxvkfgvudop.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM"
@@ -14,8 +11,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
 
+  let imageReady = false;
+
   // -------------------------
-  // LOAD IMAGES FROM STORAGE
+  // LOAD IMAGES
   // -------------------------
   async function loadImages() {
 
@@ -23,7 +22,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const { data, error } = await supabase.storage
       .from("bucket")
-      .list("", { limit: 100 });
+      .list("", {
+        limit: 100,
+        sortBy: { column: "created_at", order: "desc" }
+      });
 
     if (error) {
       console.error("LIST ERROR:", error);
@@ -39,14 +41,14 @@ window.addEventListener("DOMContentLoaded", () => {
       const img = document.createElement("img");
       img.src = urlData.publicUrl;
 
-      gallery.prepend(img);
+      gallery.appendChild(img);
     }
   }
 
   loadImages();
 
   // -------------------------
-  // UPLOAD + FILTER
+  // UPLOAD + FILTER + COMPRESSION
   // -------------------------
   upload.addEventListener("change", function (e) {
 
@@ -57,10 +59,23 @@ window.addEventListener("DOMContentLoaded", () => {
 
     img.onload = function () {
 
-      canvas.width = img.width;
-      canvas.height = img.height;
+      // 🔥 COMPRESSIONE: resize max 1200px
+      const maxSize = 1200;
+      let width = img.width;
+      let height = img.height;
 
-      ctx.drawImage(img, 0, 0);
+      if (width > height && width > maxSize) {
+        height *= maxSize / width;
+        width = maxSize;
+      } else if (height > maxSize) {
+        width *= maxSize / height;
+        height = maxSize;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
 
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       let data = imageData.data;
@@ -119,17 +134,19 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       ctx.putImageData(imageData, 0, 0);
+
+      imageReady = true;
     };
 
     img.src = URL.createObjectURL(file);
   });
 
   // -------------------------
-  // UPLOAD TO SUPABASE (FIXED)
+  // UPLOAD TO SUPABASE (COMPRESSED)
   // -------------------------
   postBtn.addEventListener("click", async () => {
 
-    if (!canvas.width || !canvas.height) {
+    if (!imageReady) {
       alert("carica prima un'immagine");
       return;
     }
@@ -141,14 +158,15 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      console.log("UPLOAD START");
+      const fileName = `${Date.now()}.jpg`;
 
-      const fileName = `${Date.now()}.png`;
+      console.log("UPLOAD START");
 
       const { data, error } = await supabase.storage
         .from("bucket")
         .upload(fileName, blob, {
-          contentType: "image/png"
+          contentType: "image/jpeg",
+          upsert: false
         });
 
       if (error) {
@@ -157,14 +175,15 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      console.log("UPLOAD OK", data);
+      console.log("UPLOAD OK");
 
+      imageReady = false;
       upload.value = "";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       loadImages();
 
-    }, "image/png");
+    }, "image/jpeg", 0.75); // 🔥 compressione qualità 75%
 
   });
 
