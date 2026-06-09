@@ -1,5 +1,7 @@
 window.addEventListener("DOMContentLoaded", () => {
 
+  console.log("APP JS LOADED");
+
   // =========================
   // SUPABASE SETUP
   // =========================
@@ -7,6 +9,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM";
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  console.log("SUPABASE READY", supabase);
 
   // =========================
   // ELEMENTS
@@ -24,12 +28,16 @@ window.addEventListener("DOMContentLoaded", () => {
   // =========================
   upload.addEventListener("change", (e) => {
 
+    console.log("IMAGE SELECTED");
+
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
 
     img.onload = () => {
+
+      console.log("IMAGE LOADED");
 
       canvas.width = img.width;
       canvas.height = img.height;
@@ -85,7 +93,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
       processedImageData = canvas.toDataURL("image/png");
 
-      console.log("IMAGE READY");
+      console.log("IMAGE PROCESSED OK");
+    };
+
+    img.onerror = (err) => {
+      console.log("IMAGE LOAD ERROR", err);
     };
 
     img.src = URL.createObjectURL(file);
@@ -96,15 +108,17 @@ window.addEventListener("DOMContentLoaded", () => {
   // =========================
   async function loadGallery() {
 
+    console.log("LOADING GALLERY");
+
     const { data, error } = await supabase
       .from("images")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.log(error);
-      return;
-    }
+    console.log("GALLERY DATA:", data);
+    console.log("GALLERY ERROR:", error);
+
+    if (error) return;
 
     data.forEach(item => {
       const img = document.createElement("img");
@@ -116,30 +130,53 @@ window.addEventListener("DOMContentLoaded", () => {
   loadGallery();
 
   // =========================
+  // CONVERT SAFE BASE64 → BLOB
+  // =========================
+  function dataURLtoBlob(dataurl) {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+
+    return new Blob([u8arr], { type: mime });
+  }
+
+  // =========================
   // PUBLISH
   // =========================
   postBtn.addEventListener("click", async () => {
 
+    console.log("PUBLISH CLICKED");
+
     if (!processedImageData) {
-      alert("Select an image first");
+      alert("No processed image yet");
+      console.log("BLOCKED: no processedImageData");
       return;
     }
 
     try {
 
-      const res = await fetch(processedImageData);
-      const blob = await res.blob();
+      const blob = dataURLtoBlob(processedImageData);
+
+      console.log("BLOB SIZE:", blob.size);
 
       const fileName = `${Date.now()}.png`;
 
-      const { error: uploadError } = await supabase
+      const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from("images")
         .upload(fileName, blob);
 
+      console.log("UPLOAD DATA:", uploadData);
+      console.log("UPLOAD ERROR:", uploadError);
+
       if (uploadError) {
-        console.log(uploadError);
-        alert("Upload failed");
+        alert(uploadError.message);
         return;
       }
 
@@ -150,13 +187,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const imageUrl = urlData.publicUrl;
 
+      console.log("PUBLIC URL:", imageUrl);
+
       const { error: dbError } = await supabase
         .from("images")
         .insert([{ url: imageUrl }]);
 
+      console.log("DB ERROR:", dbError);
+
       if (dbError) {
-        console.log(dbError);
-        alert("Database insert failed");
+        alert(dbError.message);
         return;
       }
 
@@ -171,8 +211,8 @@ window.addEventListener("DOMContentLoaded", () => {
       console.log("PUBLISHED SUCCESS");
 
     } catch (err) {
-      console.log(err);
-      alert("Unexpected error");
+      console.log("FATAL ERROR:", err);
+      alert(err.message || "Unexpected error");
     }
   });
 
