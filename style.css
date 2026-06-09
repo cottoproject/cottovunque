@@ -41,3 +41,33 @@ body {
   margin-top: 30px;
   opacity: 0.9;
 }
+
+/* aboves titles, under uploads */
+
+.upload-section {
+  margin-top: 60px;
+}
+
+#upload {
+  margin-top: 20px;
+}
+
+canvas {
+  display: block;
+  margin: 20px auto;
+  max-width: 100%;
+  border: 1px solid rgba(198, 90, 46, 0.3);
+}
+
+/* gallery */
+.gallery {
+  margin-top: 80px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.gallery img {
+  width: 100%;
+  display: block;
+}
