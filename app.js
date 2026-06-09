@@ -6,6 +6,8 @@ window.addEventListener("DOMContentLoaded", () => {
   );
 
 
+ 
+
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -15,28 +17,38 @@ window.addEventListener("DOMContentLoaded", () => {
   let imageReady = false;
 
   // -------------------------
-  // LOAD IMAGES (MOBILE SAFE)
+  // LOAD IMAGES (GLOBAL SUPABASE)
   // -------------------------
-  function loadImages() {
+  async function loadImages() {
 
     gallery.innerHTML = "";
 
-    let images = JSON.parse(localStorage.getItem("images") || "[]");
+    const { data, error } = await supabase.storage
+      .from("bucket")
+      .list("", {
+        limit: 100,
+        sortBy: { column: "created_at", order: "desc" }
+      });
 
-    if (images.length === 0) {
+    if (error) {
+      console.error("LIST ERROR:", error);
       return;
     }
 
-    images.forEach((fileName) => {
+    if (!data || data.length === 0) return;
 
-      const { data } = supabase.storage
+    data.forEach(file => {
+
+      if (!file?.name) return;
+
+      const { data: urlData } = supabase.storage
         .from("bucket")
-        .getPublicUrl(fileName);
+        .getPublicUrl(file.name);
 
-      if (!data?.publicUrl) return;
+      if (!urlData?.publicUrl) return;
 
       const img = document.createElement("img");
-      img.src = data.publicUrl;
+      img.src = urlData.publicUrl;
 
       // elimina immagini rotte
       img.onerror = () => {
@@ -61,7 +73,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     img.onload = function () {
 
-      // 🔥 resize aggressivo per mobile
+      // 🔥 resize max 1000px (compressione base)
       const maxSize = 1000;
       let width = img.width;
       let height = img.height;
@@ -177,11 +189,6 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       console.log("UPLOAD OK");
-
-      // salva lista locale (fix mobile)
-      let images = JSON.parse(localStorage.getItem("images") || "[]");
-      images.unshift(fileName);
-      localStorage.setItem("images", JSON.stringify(images));
 
       imageReady = false;
       upload.value = "";
