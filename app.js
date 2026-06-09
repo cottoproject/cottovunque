@@ -34,12 +34,20 @@ window.addEventListener("DOMContentLoaded", () => {
 
     for (const file of data) {
 
+      if (!file.name) continue;
+
       const { data: urlData } = supabase.storage
         .from("bucket")
         .getPublicUrl(file.name);
 
       const img = document.createElement("img");
+
       img.src = urlData.publicUrl;
+
+      // 🔥 elimina immagini rotte (niente quadrati bianchi)
+      img.onerror = () => {
+        img.remove();
+      };
 
       gallery.appendChild(img);
     }
@@ -59,8 +67,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     img.onload = function () {
 
-      // 🔥 COMPRESSIONE: resize max 1200px
-      const maxSize = 1200;
+      // 🔥 RESIZE più aggressivo (max 1000px)
+      const maxSize = 1000;
       let width = img.width;
       let height = img.height;
 
@@ -80,11 +88,11 @@ window.addEventListener("DOMContentLoaded", () => {
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       let data = imageData.data;
 
-      let contrast = 125;
+      let contrast = 130;
 
       function applyContrast(v, c) {
         v = v / 255;
-        v = (v - 0.5) * (1 + c * 1.8) + 0.5;
+        v = (v - 0.5) * (1 + c * 2.0) + 0.5;
         return Math.min(1, Math.max(0, v));
       }
 
@@ -142,7 +150,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -------------------------
-  // UPLOAD TO SUPABASE (COMPRESSED)
+  // UPLOAD TO SUPABASE (ULTRA COMPRESSED)
   // -------------------------
   postBtn.addEventListener("click", async () => {
 
@@ -183,7 +191,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       loadImages();
 
-    }, "image/jpeg", 0.75); // 🔥 compressione qualità 75%
+    }, "image/jpeg", 0.55); // 🔥 compressione forte (55%)
 
   });
 
