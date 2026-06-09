@@ -1,42 +1,23 @@
 window.addEventListener("DOMContentLoaded", () => {
 
-  console.log("LOCAL MODE LOADED");
-
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  const postBtn = document.getElementById("postBtn");
   const gallery = document.getElementById("gallery");
+  const postBtn = document.getElementById("postBtn");
 
   let processedImageData = null;
 
-  // =========================
-  // LOAD FROM LOCAL STORAGE
-  // =========================
-  function loadGallery() {
-    const saved = JSON.parse(localStorage.getItem("gallery") || "[]");
-
-    saved.forEach(src => {
-      const img = document.createElement("img");
-      img.src = src;
-      gallery.appendChild(img);
-    });
-  }
-
-  loadGallery();
-
-  // =========================
-  // FILTER
-  // =========================
-  upload.addEventListener("change", (e) => {
-
+  // -------------------------
+  // UPLOAD + YOUR FILTER
+  // -------------------------
+  upload.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
 
-    img.onload = () => {
-
+    img.onload = function () {
       canvas.width = img.width;
       canvas.height = img.height;
 
@@ -46,7 +27,6 @@ window.addEventListener("DOMContentLoaded", () => {
       let data = imageData.data;
 
       let contrast = 125;
-      let c = contrast / 100;
 
       function applyContrast(v, c) {
         v = v / 255;
@@ -54,8 +34,9 @@ window.addEventListener("DOMContentLoaded", () => {
         return Math.min(1, Math.max(0, v));
       }
 
-      for (let i = 0; i < data.length; i += 4) {
+      let c = contrast / 100;
 
+      for (let i = 0; i < data.length; i += 4) {
         let r = data[i];
         let g = data[i + 1];
         let b = data[i + 2];
@@ -77,50 +58,65 @@ window.addEventListener("DOMContentLoaded", () => {
         mid /= total;
         highlight /= total;
 
-        const sr = 100, sg = 65, sb = 45;
-        const mr = 225, mg = 125, mb = 70;
-        const hr = 255, hg = 255, hb = 255;
+        const shadowR = 100;
+        const shadowG = 65;
+        const shadowB = 45;
 
-        data[i]     = sr * shadow + mr * mid + hr * highlight;
-        data[i + 1] = sg * shadow + mg * mid + hg * highlight;
-        data[i + 2] = sb * shadow + mb * mid + hb * highlight;
+        const midR = 225;
+        const midG = 125;
+        const midB = 70;
+
+        const highlightR = 255;
+        const highlightG = 255;
+        const highlightB = 255;
+
+        let rr =
+          shadowR * shadow +
+          midR * mid +
+          highlightR * highlight;
+
+        let gg =
+          shadowG * shadow +
+          midG * mid +
+          highlightG * highlight;
+
+        let bb =
+          shadowB * shadow +
+          midB * mid +
+          highlightB * highlight;
+
+        data[i] = rr;
+        data[i + 1] = gg;
+        data[i + 2] = bb;
       }
 
       ctx.putImageData(imageData, 0, 0);
 
+      // save for posting
       processedImageData = canvas.toDataURL("image/png");
-
-      console.log("IMAGE READY");
     };
 
     img.src = URL.createObjectURL(file);
   });
 
-  // =========================
-  // SAVE TO BROWSER MEMORY
-  // =========================
+  // -------------------------
+  // POST TO GALLERY
+  // -------------------------
   postBtn.addEventListener("click", () => {
 
     if (!processedImageData) {
-      alert("Select image first");
+      alert("carica prima un'immagine");
       return;
     }
 
-    const saved = JSON.parse(localStorage.getItem("gallery") || "[]");
-
-    saved.unshift(processedImageData);
-
-    localStorage.setItem("gallery", JSON.stringify(saved));
-
     const img = document.createElement("img");
     img.src = processedImageData;
+
     gallery.prepend(img);
 
     processedImageData = null;
     upload.value = "";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    console.log("SAVED LOCALLY");
   });
 
 });
