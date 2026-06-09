@@ -22,7 +22,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   let processedImageData = null;
 
   // =========================
-  // IMAGE FILTER (unchanged)
+  // IMAGE FILTER
   // =========================
   upload.addEventListener("change", (e) => {
 
@@ -93,15 +93,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // =========================
-  // LOAD IMAGES FROM STORAGE
+  // LOAD GALLERY (BUCKET: immagini)
   // =========================
   async function loadGallery() {
 
-    console.log("LOADING STORAGE FILES");
+    console.log("LOADING STORAGE FILES (immagini)");
 
     const { data, error } = await supabase
       .storage
-      .from("images")
+      .from("immagini")
       .list("", { limit: 100 });
 
     console.log("FILES:", data, error);
@@ -110,7 +110,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     data.forEach(file => {
 
-      const url = `${SUPABASE_URL}/storage/v1/object/public/images/${file.name}`;
+      const url = `${SUPABASE_URL}/storage/v1/object/public/immagini/${file.name}`;
 
       const img = document.createElement("img");
       img.src = url;
@@ -121,7 +121,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   loadGallery();
 
   // =========================
-  // UPLOAD ONLY (NO DB)
+  // UPLOAD (BUCKET: immagini)
   // =========================
   postBtn.addEventListener("click", async () => {
 
@@ -150,7 +150,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const { data, error } = await supabase
       .storage
-      .from("images")
+      .from("immagini")
       .upload(fileName, blob, {
         contentType: "image/png",
         upsert: false
@@ -163,7 +163,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const url = `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
+    const url = `${SUPABASE_URL}/storage/v1/object/public/immagini/${fileName}`;
 
     const img = document.createElement("img");
     img.src = url;
