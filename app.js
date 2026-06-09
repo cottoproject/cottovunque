@@ -1,18 +1,7 @@
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
 
-  console.log("APP LOADED");
+  console.log("LOCAL MODE LOADED");
 
-  // =========================
-  // SUPABASE
-  // =========================
-  const SUPABASE_URL = "https://bflcyezzkzxvkfgvudop.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM";
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  // =========================
-  // DOM
-  // =========================
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -22,7 +11,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   let processedImageData = null;
 
   // =========================
-  // IMAGE FILTER
+  // LOAD FROM LOCAL STORAGE
+  // =========================
+  function loadGallery() {
+    const saved = JSON.parse(localStorage.getItem("gallery") || "[]");
+
+    saved.forEach(src => {
+      const img = document.createElement("img");
+      img.src = src;
+      gallery.appendChild(img);
+    });
+  }
+
+  loadGallery();
+
+  // =========================
+  // FILTER
   // =========================
   upload.addEventListener("change", (e) => {
 
@@ -93,87 +97,30 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // =========================
-  // LOAD GALLERY (BUCKET: immagini)
+  // SAVE TO BROWSER MEMORY
   // =========================
-  async function loadGallery() {
-
-    console.log("LOADING STORAGE FILES (immagini)");
-
-    const { data, error } = await supabase
-      .storage
-      .from("immagini")
-      .list("", { limit: 100 });
-
-    console.log("FILES:", data, error);
-
-    if (error) return;
-
-    data.forEach(file => {
-
-      const url = `${SUPABASE_URL}/storage/v1/object/public/immagini/${file.name}`;
-
-      const img = document.createElement("img");
-      img.src = url;
-      gallery.appendChild(img);
-    });
-  }
-
-  loadGallery();
-
-  // =========================
-  // UPLOAD (BUCKET: immagini)
-  // =========================
-  postBtn.addEventListener("click", async () => {
-
-    console.log("PUBLISH CLICKED");
+  postBtn.addEventListener("click", () => {
 
     if (!processedImageData) {
       alert("Select image first");
       return;
     }
 
-    function dataURLtoBlob(dataurl) {
-      const arr = dataurl.split(',');
-      const mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) u8arr[n] = bstr.charCodeAt(n);
-      return new Blob([u8arr], { type: mime });
-    }
+    const saved = JSON.parse(localStorage.getItem("gallery") || "[]");
 
-    const blob = dataURLtoBlob(processedImageData);
+    saved.unshift(processedImageData);
 
-    console.log("BLOB SIZE:", blob.size);
-
-    const fileName = `${Date.now()}.png`;
-
-    const { data, error } = await supabase
-      .storage
-      .from("immagini")
-      .upload(fileName, blob, {
-        contentType: "image/png",
-        upsert: false
-      });
-
-    console.log("UPLOAD RESULT:", data, error);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    const url = `${SUPABASE_URL}/storage/v1/object/public/immagini/${fileName}`;
+    localStorage.setItem("gallery", JSON.stringify(saved));
 
     const img = document.createElement("img");
-    img.src = url;
+    img.src = processedImageData;
     gallery.prepend(img);
 
     processedImageData = null;
     upload.value = "";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    console.log("SUCCESS");
+    console.log("SAVED LOCALLY");
   });
 
 });
