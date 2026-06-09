@@ -1,23 +1,39 @@
 window.addEventListener("DOMContentLoaded", () => {
 
+  // =========================
+  // SUPABASE SETUP
+  // =========================
+  const SUPABASE_URL = "bflcyezzkzxvkfgvudop";
+  const SUPABASE_KEY = "sb_publishable_9y3gld65Q8pjdXUuEtQatw_9nC8RDnS";
+
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  // =========================
+  // DOM ELEMENTS
+  // =========================
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
+  const gallery = document.getElementById("gallery");
 
   let processedImageData = null;
 
-  // -------------------------
-  // UPLOAD + YOUR FILTER
-  // -------------------------
+  // =========================
+  // YOUR FILTER (UNCHANGED)
+  // =========================
   upload.addEventListener("change", function (e) {
+
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
 
     img.onload = function () {
+
       canvas.width = img.width;
       canvas.height = img.height;
 
@@ -37,6 +53,7 @@ window.addEventListener("DOMContentLoaded", () => {
       let c = contrast / 100;
 
       for (let i = 0; i < data.length; i += 4) {
+
         let r = data[i];
         let g = data[i + 1];
         let b = data[i + 2];
@@ -92,32 +109,92 @@ window.addEventListener("DOMContentLoaded", () => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // save for posting
       processedImageData = canvas.toDataURL("image/png");
     };
 
     img.src = URL.createObjectURL(file);
   });
 
-  // -------------------------
-  // POST TO GALLERY
-  // -------------------------
-  postBtn.addEventListener("click", () => {
+  // =========================
+  // LOAD EXISTING GALLERY
+  // =========================
+  async function loadGallery() {
+
+    const { data, error } = await supabase
+      .from("images")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    data.forEach(item => {
+      const img = document.createElement("img");
+      img.src = item.url;
+      gallery.appendChild(img);
+    });
+  }
+
+  loadGallery();
+
+  // =========================
+  // PUBLISH IMAGE (PERMANENT)
+  // =========================
+  postBtn.addEventListener("click", async () => {
 
     if (!processedImageData) {
       alert("carica prima un'immagine");
       return;
     }
 
-    const img = document.createElement("img");
-    img.src = processedImageData;
+    try {
 
-    gallery.prepend(img);
+      const res = await fetch(processedImageData);
+      const blob = await res.blob();
 
-    processedImageData = null;
-    upload.value = "";
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const fileName = `${Date.now()}.png`;
+
+      // upload to storage
+      const { error: uploadError } = await supabase
+        .storage
+        .from("images")
+        .upload(fileName, blob);
+
+      if (uploadError) {
+        console.error(uploadError);
+        alert("upload fallito");
+        return;
+      }
+
+      // get public URL
+      const { data: urlData } = supabase
+        .storage
+        .from("images")
+        .getPublicUrl(fileName);
+
+      const imageUrl = urlData.publicUrl;
+
+      // save in database
+      await supabase
+        .from("images")
+        .insert([{ url: imageUrl }]);
+
+      // show instantly
+      const img = document.createElement("img");
+      img.src = imageUrl;
+      gallery.prepend(img);
+
+      // reset
+      processedImageData = null;
+      upload.value = "";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    } catch (err) {
+      console.error(err);
+      alert("errore upload");
+    }
   });
-
 
 });
