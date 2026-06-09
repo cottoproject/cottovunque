@@ -62,3 +62,5 @@ postBtn.addEventListener("click", () => {
   processedImageData = null;
   upload.value = "";
 });
+
+<script src="app.js"></script>
