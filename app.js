@@ -13,7 +13,7 @@ window.addEventListener("DOMContentLoaded", () => {
   console.log("SUPABASE READY");
 
   // =========================
-  // ELEMENTS
+  // DOM
   // =========================
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
   let processedImageData = null;
 
   if (!upload || !canvas || !postBtn || !gallery) {
-    throw new Error("Missing DOM elements - check HTML IDs");
+    throw new Error("Missing HTML elements (check IDs)");
   }
 
   // =========================
@@ -124,7 +124,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadGallery();
 
   // =========================
-  // BLOB CONVERSION
+  // BLOB CONVERT
   // =========================
   function dataURLtoBlob(dataurl) {
     const arr = dataurl.split(',');
@@ -146,7 +146,7 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("PUBLISH CLICKED");
 
     if (!processedImageData) {
-      alert("Select image first");
+      alert("No image selected");
       return;
     }
 
@@ -158,11 +158,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const fileName = `${Date.now()}.png`;
 
+      // UPLOAD
       const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from("images")
-        .upload(fileName, blob);
+        .upload(fileName, blob, {
+          contentType: "image/png",
+          upsert: false
+        });
 
+      console.log("UPLOAD DATA:", uploadData);
       console.log("UPLOAD ERROR:", uploadError);
 
       if (uploadError) {
@@ -170,6 +175,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // PUBLIC URL
       const { data: urlData } = supabase
         .storage
         .from("images")
@@ -177,6 +183,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const imageUrl = urlData.publicUrl;
 
+      console.log("PUBLIC URL:", imageUrl);
+
+      // DB INSERT
       const { error: dbError } = await supabase
         .from("images")
         .insert([{ url: imageUrl }]);
@@ -188,6 +197,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // UI UPDATE
       const img = document.createElement("img");
       img.src = imageUrl;
       gallery.prepend(img);
@@ -199,8 +209,8 @@ window.addEventListener("DOMContentLoaded", () => {
       console.log("SUCCESS");
 
     } catch (err) {
-      console.log(err);
-      alert("Unexpected error");
+      console.log("FATAL ERROR:", err);
+      alert(err.message || "Unexpected error");
     }
   });
 
