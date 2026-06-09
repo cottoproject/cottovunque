@@ -1,15 +1,29 @@
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
 
   // =========================
   // SUPABASE SETUP
   // =========================
-  const SUPABASE_URL = "bflcyezzkzxvkfgvudop";
+  const SUPABASE_URL = "https://bflcyezzkzxvkfgvudop.supabase.co";
   const SUPABASE_KEY = "sb_publishable_9y3gld65Q8pjdXUuEtQatw_9nC8RDnS";
 
   const supabase = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
   );
+
+  // =========================
+  // AUTO ADMIN LOGIN (HIDDEN)
+  // =========================
+  const { error: loginError } = await supabase.auth.signInWithPassword({
+    email: "romeobelotti2@gmail.com",
+    password: "p@alt@kre@69"
+  });
+
+  if (loginError) {
+    console.log("Admin login failed:", loginError);
+  } else {
+    console.log("Admin logged in");
+  }
 
   // =========================
   // DOM ELEMENTS
@@ -116,7 +130,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // LOAD EXISTING GALLERY
+  // LOAD GALLERY (PERMANENT DATA)
   // =========================
   async function loadGallery() {
 
@@ -126,21 +140,54 @@ window.addEventListener("DOMContentLoaded", () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.log(error);
       return;
     }
 
     data.forEach(item => {
-      const img = document.createElement("img");
-      img.src = item.url;
-      gallery.appendChild(img);
+      createImage(item.url);
     });
   }
 
   loadGallery();
 
   // =========================
-  // PUBLISH IMAGE (PERMANENT)
+  // CREATE IMAGE ELEMENT
+  // =========================
+  function createImage(url) {
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("img-wrapper");
+
+    const img = document.createElement("img");
+    img.src = url;
+
+    const btn = document.createElement("button");
+    btn.innerText = "delete";
+
+    btn.onclick = async () => {
+
+      const fileName = url.split("/").pop();
+
+      await supabase.storage
+        .from("images")
+        .remove([fileName]);
+
+      await supabase
+        .from("images")
+        .delete()
+        .eq("url", url);
+
+      wrapper.remove();
+    };
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(btn);
+    gallery.appendChild(wrapper);
+  }
+
+  // =========================
+  // UPLOAD + PUBLISH
   // =========================
   postBtn.addEventListener("click", async () => {
 
@@ -149,52 +196,38 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    try {
+    const res = await fetch(processedImageData);
+    const blob = await res.blob();
 
-      const res = await fetch(processedImageData);
-      const blob = await res.blob();
+    const fileName = `${Date.now()}.png`;
 
-      const fileName = `${Date.now()}.png`;
+    const { error: uploadError } = await supabase
+      .storage
+      .from("images")
+      .upload(fileName, blob);
 
-      // upload to storage
-      const { error: uploadError } = await supabase
-        .storage
-        .from("images")
-        .upload(fileName, blob);
-
-      if (uploadError) {
-        console.error(uploadError);
-        alert("upload fallito");
-        return;
-      }
-
-      // get public URL
-      const { data: urlData } = supabase
-        .storage
-        .from("images")
-        .getPublicUrl(fileName);
-
-      const imageUrl = urlData.publicUrl;
-
-      // save in database
-      await supabase
-        .from("images")
-        .insert([{ url: imageUrl }]);
-
-      // show instantly
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      gallery.prepend(img);
-
-      // reset
-      processedImageData = null;
-      upload.value = "";
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    } catch (err) {
-      console.error(err);
-      alert("errore upload");
+    if (uploadError) {
+      console.log(uploadError);
+      alert("upload fallito");
+      return;
     }
+
+    const { data: urlData } = supabase
+      .storage
+      .from("images")
+      .getPublicUrl(fileName);
+
+    const imageUrl = urlData.publicUrl;
+
+    await supabase
+      .from("images")
+      .insert([{ url: imageUrl }]);
+
+    createImage(imageUrl);
+
+    processedImageData = null;
+    upload.value = "";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
 
 });
