@@ -14,10 +14,8 @@ window.addEventListener("DOMContentLoaded", () => {
   const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
 
-  let currentFile = null;
-
   // -------------------------
-  // LOAD IMAGES
+  // LOAD IMAGES FROM STORAGE
   // -------------------------
   async function loadImages() {
 
@@ -121,48 +119,53 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       ctx.putImageData(imageData, 0, 0);
-
-      // salva file per upload
-      canvas.toBlob((blob) => {
-        currentFile = blob;
-      }, "image/png");
-
     };
 
     img.src = URL.createObjectURL(file);
   });
 
   // -------------------------
-  // UPLOAD TO SUPABASE
+  // UPLOAD TO SUPABASE (FIXED)
   // -------------------------
   postBtn.addEventListener("click", async () => {
 
-    if (!currentFile) {
+    if (!canvas.width || !canvas.height) {
       alert("carica prima un'immagine");
       return;
     }
 
-    const fileName = `${Date.now()}.png`;
+    canvas.toBlob(async (blob) => {
 
-    console.log("UPLOAD START");
+      if (!blob) {
+        alert("errore creazione immagine");
+        return;
+      }
 
-    const { data, error } = await supabase.storage
-      .from("bucket")
-      .upload(fileName, currentFile);
+      console.log("UPLOAD START");
 
-    if (error) {
-      console.error("UPLOAD ERROR:", error);
-      alert(error.message);
-      return;
-    }
+      const fileName = `${Date.now()}.png`;
 
-    console.log("UPLOAD OK", data);
+      const { data, error } = await supabase.storage
+        .from("bucket")
+        .upload(fileName, blob, {
+          contentType: "image/png"
+        });
 
-    currentFile = null;
-    upload.value = "";
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (error) {
+        console.error("UPLOAD ERROR:", error);
+        alert(error.message);
+        return;
+      }
 
-    loadImages();
+      console.log("UPLOAD OK", data);
+
+      upload.value = "";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      loadImages();
+
+    }, "image/png");
+
   });
 
 });
