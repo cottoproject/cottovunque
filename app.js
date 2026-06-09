@@ -6,13 +6,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_URL = "https://bflcyezzkzxvkfgvudop.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM";
 
-  const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // =========================
-  // DOM ELEMENTS
+  // ELEMENTS
   // =========================
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
@@ -23,16 +20,16 @@ window.addEventListener("DOMContentLoaded", () => {
   let processedImageData = null;
 
   // =========================
-  // YOUR FILTER (UNCHANGED)
+  // IMAGE PROCESSING
   // =========================
-  upload.addEventListener("change", function (e) {
+  upload.addEventListener("change", (e) => {
 
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
 
-    img.onload = function () {
+    img.onload = () => {
 
       canvas.width = img.width;
       canvas.height = img.height;
@@ -75,48 +72,27 @@ window.addEventListener("DOMContentLoaded", () => {
         mid /= total;
         highlight /= total;
 
-        const shadowR = 100;
-        const shadowG = 65;
-        const shadowB = 45;
+        const shadowR = 100, shadowG = 65, shadowB = 45;
+        const midR = 225, midG = 125, midB = 70;
+        const highlightR = 255, highlightG = 255, highlightB = 255;
 
-        const midR = 225;
-        const midG = 125;
-        const midB = 70;
-
-        const highlightR = 255;
-        const highlightG = 255;
-        const highlightB = 255;
-
-        let rr =
-          shadowR * shadow +
-          midR * mid +
-          highlightR * highlight;
-
-        let gg =
-          shadowG * shadow +
-          midG * mid +
-          highlightG * highlight;
-
-        let bb =
-          shadowB * shadow +
-          midB * mid +
-          highlightB * highlight;
-
-        data[i] = rr;
-        data[i + 1] = gg;
-        data[i + 2] = bb;
+        data[i]     = shadowR * shadow + midR * mid + highlightR * highlight;
+        data[i + 1] = shadowG * shadow + midG * mid + highlightG * highlight;
+        data[i + 2] = shadowB * shadow + midB * mid + highlightB * highlight;
       }
 
       ctx.putImageData(imageData, 0, 0);
 
       processedImageData = canvas.toDataURL("image/png");
+
+      console.log("IMAGE READY");
     };
 
     img.src = URL.createObjectURL(file);
   });
 
   // =========================
-  // LOAD EXISTING GALLERY
+  // LOAD GALLERY
   // =========================
   async function loadGallery() {
 
@@ -126,7 +102,7 @@ window.addEventListener("DOMContentLoaded", () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.log(error);
       return;
     }
 
@@ -140,12 +116,12 @@ window.addEventListener("DOMContentLoaded", () => {
   loadGallery();
 
   // =========================
-  // PUBLISH IMAGE (PERMANENT)
+  // PUBLISH
   // =========================
   postBtn.addEventListener("click", async () => {
 
     if (!processedImageData) {
-      alert("carica prima un'immagine");
+      alert("Select an image first");
       return;
     }
 
@@ -156,19 +132,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const fileName = `${Date.now()}.png`;
 
-      // upload to storage
       const { error: uploadError } = await supabase
         .storage
         .from("images")
         .upload(fileName, blob);
 
       if (uploadError) {
-        console.error(uploadError);
-        alert("upload fallito");
+        console.log(uploadError);
+        alert("Upload failed");
         return;
       }
 
-      // get public URL
       const { data: urlData } = supabase
         .storage
         .from("images")
@@ -176,24 +150,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const imageUrl = urlData.publicUrl;
 
-      // save in database
-      await supabase
+      const { error: dbError } = await supabase
         .from("images")
         .insert([{ url: imageUrl }]);
 
-      // show instantly
+      if (dbError) {
+        console.log(dbError);
+        alert("Database insert failed");
+        return;
+      }
+
       const img = document.createElement("img");
       img.src = imageUrl;
       gallery.prepend(img);
 
-      // reset
       processedImageData = null;
       upload.value = "";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      console.log("PUBLISHED SUCCESS");
+
     } catch (err) {
-      console.error(err);
-      alert("errore upload");
+      console.log(err);
+      alert("Unexpected error");
     }
   });
 
