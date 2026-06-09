@@ -1,66 +1,66 @@
-const upload = document.getElementById("upload");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const gallery = document.getElementById("gallery");
-const postBtn = document.getElementById("postBtn");
+window.addEventListener("DOMContentLoaded", () => {
 
-let processedImageData = null;
+  const upload = document.getElementById("upload");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const gallery = document.getElementById("gallery");
+  const postBtn = document.getElementById("postBtn");
 
-upload.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  let processedImageData = null;
 
-  const img = new Image();
-  const reader = new FileReader();
+  upload.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  reader.onload = (evt) => {
-    img.src = evt.target.result;
-  };
+    const img = new Image();
+    const reader = new FileReader();
 
-  img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
+    reader.onload = (evt) => {
+      img.src = evt.target.result;
+    };
 
-    ctx.drawImage(img, 0, 0);
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
 
-    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let data = imageData.data;
+      ctx.drawImage(img, 0, 0);
 
-    // your terracotta-style filter
-    for (let i = 0; i < data.length; i += 4) {
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let data = imageData.data;
 
-      // grayscale base
-      let gray = 0.3 * r + 0.59 * g + 0.11 * b;
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
 
-      // push toward terracotta
-      data[i]     = gray * 1.3; // R
-      data[i + 1] = gray * 0.7; // G
-      data[i + 2] = gray * 0.4; // B
+        let gray = 0.3 * r + 0.59 * g + 0.11 * b;
+
+        data[i]     = gray * 1.3;
+        data[i + 1] = gray * 0.7;
+        data[i + 2] = gray * 0.4;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      processedImageData = canvas.toDataURL("image/png");
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  postBtn.addEventListener("click", () => {
+    if (!processedImageData) {
+      alert("carica prima un'immagine");
+      return;
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    const img = document.createElement("img");
+    img.src = processedImageData;
 
-    // store for posting
-    processedImageData = canvas.toDataURL("image/png");
-  };
+    gallery.prepend(img);
 
-  reader.readAsDataURL(file);
+    processedImageData = null;
+    upload.value = "";
+  });
+
 });
-
-postBtn.addEventListener("click", () => {
-  if (!processedImageData) return;
-
-  const img = document.createElement("img");
-  img.src = processedImageData;
-
-  gallery.prepend(img);
-
-  // reset
-  processedImageData = null;
-  upload.value = "";
-});
-
-<script src="app.js"></script>
