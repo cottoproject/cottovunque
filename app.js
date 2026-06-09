@@ -1,16 +1,16 @@
 window.addEventListener("DOMContentLoaded", () => {
 
-  console.log("APP JS LOADED");
+  console.log("APP LOADED");
 
   // =========================
-  // SUPABASE SETUP
+  // SUPABASE
   // =========================
   const SUPABASE_URL = "https://bflcyezzkzxvkfgvudop.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM";
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  console.log("SUPABASE READY", supabase);
+  console.log("SUPABASE READY");
 
   // =========================
   // ELEMENTS
@@ -21,14 +21,18 @@ window.addEventListener("DOMContentLoaded", () => {
   const postBtn = document.getElementById("postBtn");
   const gallery = document.getElementById("gallery");
 
+  console.log({ upload, canvas, postBtn, gallery });
+
   let processedImageData = null;
 
+  if (!upload || !canvas || !postBtn || !gallery) {
+    throw new Error("Missing DOM elements - check HTML IDs");
+  }
+
   // =========================
-  // IMAGE PROCESSING
+  // IMAGE FILTER
   // =========================
   upload.addEventListener("change", (e) => {
-
-    console.log("IMAGE SELECTED");
 
     const file = e.target.files[0];
     if (!file) return;
@@ -36,8 +40,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const img = new Image();
 
     img.onload = () => {
-
-      console.log("IMAGE LOADED");
 
       canvas.width = img.width;
       canvas.height = img.height;
@@ -48,14 +50,13 @@ window.addEventListener("DOMContentLoaded", () => {
       let data = imageData.data;
 
       let contrast = 125;
+      let c = contrast / 100;
 
       function applyContrast(v, c) {
         v = v / 255;
         v = (v - 0.5) * (1 + c * 1.8) + 0.5;
         return Math.min(1, Math.max(0, v));
       }
-
-      let c = contrast / 100;
 
       for (let i = 0; i < data.length; i += 4) {
 
@@ -80,24 +81,20 @@ window.addEventListener("DOMContentLoaded", () => {
         mid /= total;
         highlight /= total;
 
-        const shadowR = 100, shadowG = 65, shadowB = 45;
-        const midR = 225, midG = 125, midB = 70;
-        const highlightR = 255, highlightG = 255, highlightB = 255;
+        const sr = 100, sg = 65, sb = 45;
+        const mr = 225, mg = 125, mb = 70;
+        const hr = 255, hg = 255, hb = 255;
 
-        data[i]     = shadowR * shadow + midR * mid + highlightR * highlight;
-        data[i + 1] = shadowG * shadow + midG * mid + highlightG * highlight;
-        data[i + 2] = shadowB * shadow + midB * mid + highlightB * highlight;
+        data[i]     = sr * shadow + mr * mid + hr * highlight;
+        data[i + 1] = sg * shadow + mg * mid + hg * highlight;
+        data[i + 2] = sb * shadow + mb * mid + hb * highlight;
       }
 
       ctx.putImageData(imageData, 0, 0);
 
       processedImageData = canvas.toDataURL("image/png");
 
-      console.log("IMAGE PROCESSED OK");
-    };
-
-    img.onerror = (err) => {
-      console.log("IMAGE LOAD ERROR", err);
+      console.log("IMAGE READY");
     };
 
     img.src = URL.createObjectURL(file);
@@ -108,15 +105,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // =========================
   async function loadGallery() {
 
-    console.log("LOADING GALLERY");
-
     const { data, error } = await supabase
       .from("images")
       .select("*")
       .order("created_at", { ascending: false });
 
-    console.log("GALLERY DATA:", data);
-    console.log("GALLERY ERROR:", error);
+    console.log("GALLERY:", data, error);
 
     if (error) return;
 
@@ -130,7 +124,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadGallery();
 
   // =========================
-  // CONVERT SAFE BASE64 → BLOB
+  // BLOB CONVERSION
   // =========================
   function dataURLtoBlob(dataurl) {
     const arr = dataurl.split(',');
@@ -139,9 +133,7 @@ window.addEventListener("DOMContentLoaded", () => {
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
 
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
 
     return new Blob([u8arr], { type: mime });
   }
@@ -154,8 +146,7 @@ window.addEventListener("DOMContentLoaded", () => {
     console.log("PUBLISH CLICKED");
 
     if (!processedImageData) {
-      alert("No processed image yet");
-      console.log("BLOCKED: no processedImageData");
+      alert("Select image first");
       return;
     }
 
@@ -172,7 +163,6 @@ window.addEventListener("DOMContentLoaded", () => {
         .from("images")
         .upload(fileName, blob);
 
-      console.log("UPLOAD DATA:", uploadData);
       console.log("UPLOAD ERROR:", uploadError);
 
       if (uploadError) {
@@ -186,8 +176,6 @@ window.addEventListener("DOMContentLoaded", () => {
         .getPublicUrl(fileName);
 
       const imageUrl = urlData.publicUrl;
-
-      console.log("PUBLIC URL:", imageUrl);
 
       const { error: dbError } = await supabase
         .from("images")
@@ -208,11 +196,11 @@ window.addEventListener("DOMContentLoaded", () => {
       upload.value = "";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      console.log("PUBLISHED SUCCESS");
+      console.log("SUCCESS");
 
     } catch (err) {
-      console.log("FATAL ERROR:", err);
-      alert(err.message || "Unexpected error");
+      console.log(err);
+      alert("Unexpected error");
     }
   });
 
