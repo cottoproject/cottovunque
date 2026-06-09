@@ -14,10 +14,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
 
-  let processedBlob = null;
+  let currentFile = null;
 
   // -------------------------
-  // LOAD IMAGES FROM BUCKET
+  // LOAD IMAGES
   // -------------------------
   async function loadImages() {
 
@@ -28,7 +28,7 @@ window.addEventListener("DOMContentLoaded", () => {
       .list("", { limit: 100 });
 
     if (error) {
-      console.error(error);
+      console.error("LIST ERROR:", error);
       return;
     }
 
@@ -122,9 +122,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // convert to blob for upload
+      // salva file per upload
       canvas.toBlob((blob) => {
-        processedBlob = blob;
+        currentFile = blob;
       }, "image/png");
 
     };
@@ -133,40 +133,36 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -------------------------
-  // POST (UPLOAD TO SUPABASE)
+  // UPLOAD TO SUPABASE
   // -------------------------
-
-
-
-  // ... tutto il tuo codice sopra ...
-
   postBtn.addEventListener("click", async () => {
 
-    if (!canvas.width || !canvas.height) {
+    if (!currentFile) {
       alert("carica prima un'immagine");
       return;
     }
 
-    canvas.toBlob(async (blob) => {
+    const fileName = `${Date.now()}.png`;
 
-      if (!blob) return;
+    console.log("UPLOAD START");
 
-      const fileName = `${Date.now()}.png`;
+    const { data, error } = await supabase.storage
+      .from("bucket")
+      .upload(fileName, currentFile);
 
-      const { error } = await supabase.storage
-        .from("bucket")
-        .upload(fileName, blob);
+    if (error) {
+      console.error("UPLOAD ERROR:", error);
+      alert(error.message);
+      return;
+    }
 
-      if (error) {
-        console.error(error);
-        return;
-      }
+    console.log("UPLOAD OK", data);
 
-      loadImages();
+    currentFile = null;
+    upload.value = "";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    }, "image/png");
-
+    loadImages();
   });
 
-
-
+});
