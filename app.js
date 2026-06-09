@@ -1,4 +1,4 @@
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
 
   console.log("APP LOADED");
 
@@ -10,8 +10,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  console.log("SUPABASE READY");
-
   // =========================
   // DOM
   // =========================
@@ -21,16 +19,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const postBtn = document.getElementById("postBtn");
   const gallery = document.getElementById("gallery");
 
-  console.log({ upload, canvas, postBtn, gallery });
-
   let processedImageData = null;
 
-  if (!upload || !canvas || !postBtn || !gallery) {
-    throw new Error("Missing HTML elements (check IDs)");
-  }
-
   // =========================
-  // IMAGE FILTER
+  // IMAGE FILTER (unchanged)
   // =========================
   upload.addEventListener("change", (e) => {
 
@@ -101,22 +93,27 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================
-  // LOAD GALLERY
+  // LOAD IMAGES FROM STORAGE
   // =========================
   async function loadGallery() {
 
-    const { data, error } = await supabase
-      .from("images")
-      .select("*")
-      .order("created_at", { ascending: false });
+    console.log("LOADING STORAGE FILES");
 
-    console.log("GALLERY:", data, error);
+    const { data, error } = await supabase
+      .storage
+      .from("images")
+      .list("", { limit: 100 });
+
+    console.log("FILES:", data, error);
 
     if (error) return;
 
-    data.forEach(item => {
+    data.forEach(file => {
+
+      const url = `${SUPABASE_URL}/storage/v1/object/public/images/${file.name}`;
+
       const img = document.createElement("img");
-      img.src = item.url;
+      img.src = url;
       gallery.appendChild(img);
     });
   }
@@ -124,94 +121,59 @@ window.addEventListener("DOMContentLoaded", () => {
   loadGallery();
 
   // =========================
-  // BLOB CONVERT
-  // =========================
-  function dataURLtoBlob(dataurl) {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-
-    return new Blob([u8arr], { type: mime });
-  }
-
-  // =========================
-  // PUBLISH
+  // UPLOAD ONLY (NO DB)
   // =========================
   postBtn.addEventListener("click", async () => {
 
     console.log("PUBLISH CLICKED");
 
     if (!processedImageData) {
-      alert("No image selected");
+      alert("Select image first");
       return;
     }
 
-    try {
-
-      const blob = dataURLtoBlob(processedImageData);
-
-      console.log("BLOB SIZE:", blob.size);
-
-      const fileName = `${Date.now()}.png`;
-
-      // UPLOAD
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from("images")
-        .upload(fileName, blob, {
-          contentType: "image/png",
-          upsert: false
-        });
-
-      console.log("UPLOAD DATA:", uploadData);
-      console.log("UPLOAD ERROR:", uploadError);
-
-      if (uploadError) {
-        alert(uploadError.message);
-        return;
-      }
-
-      // PUBLIC URL
-      const { data: urlData } = supabase
-        .storage
-        .from("images")
-        .getPublicUrl(fileName);
-
-      const imageUrl = urlData.publicUrl;
-
-      console.log("PUBLIC URL:", imageUrl);
-
-      // DB INSERT
-      const { error: dbError } = await supabase
-        .from("images")
-        .insert([{ url: imageUrl }]);
-
-      console.log("DB ERROR:", dbError);
-
-      if (dbError) {
-        alert(dbError.message);
-        return;
-      }
-
-      // UI UPDATE
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      gallery.prepend(img);
-
-      processedImageData = null;
-      upload.value = "";
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      console.log("SUCCESS");
-
-    } catch (err) {
-      console.log("FATAL ERROR:", err);
-      alert(err.message || "Unexpected error");
+    function dataURLtoBlob(dataurl) {
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) u8arr[n] = bstr.charCodeAt(n);
+      return new Blob([u8arr], { type: mime });
     }
+
+    const blob = dataURLtoBlob(processedImageData);
+
+    console.log("BLOB SIZE:", blob.size);
+
+    const fileName = `${Date.now()}.png`;
+
+    const { data, error } = await supabase
+      .storage
+      .from("images")
+      .upload(fileName, blob, {
+        contentType: "image/png",
+        upsert: false
+      });
+
+    console.log("UPLOAD RESULT:", data, error);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    const url = `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
+
+    const img = document.createElement("img");
+    img.src = url;
+    gallery.prepend(img);
+
+    processedImageData = null;
+    upload.value = "";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    console.log("SUCCESS");
   });
 
 });
