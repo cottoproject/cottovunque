@@ -1,1 +1,39 @@
+body {
+  margin: 0;
+  background: white;
+  color: #c65a2e; /* terracotta */
+}
 
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+/* MAIN TITLE */
+.title {
+  font-size: 90px;
+  font-weight: 900;
+  font-family: "Georgia", serif;
+  color: #c65a2e;
+  margin-bottom: 30px;
+  letter-spacing: -2px;
+}
+
+/* MANIFESTO TEXT (slanted, different font) */
+.manifesto {
+  font-family: "Arial", sans-serif;
+  font-style: italic;
+  transform: rotate(-2deg);
+  font-size: 20px;
+  line-height: 1.6;
+  max-width: 700px;
+  margin-bottom: 40px;
+}
+
+/* CURSIVE CTA */
+.cta {
+  font-family: cursive;
+  font-size: 22px;
+  margin-top: 40px;
+}
