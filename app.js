@@ -8,26 +8,26 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let processedImageData = null;
 
+  // -----------------------
+  // IMAGE UPLOAD + FILTER
+  // -----------------------
   upload.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
-    const reader = new FileReader();
-
-    reader.onload = (evt) => {
-      img.src = evt.target.result;
-    };
 
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
 
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
 
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       let data = imageData.data;
 
+      // terracotta-style filter
       for (let i = 0; i < data.length; i += 4) {
         let r = data[i];
         let g = data[i + 1];
@@ -35,9 +35,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
         let gray = 0.3 * r + 0.59 * g + 0.11 * b;
 
-        data[i]     = gray * 1.3;
-        data[i + 1] = gray * 0.7;
-        data[i + 2] = gray * 0.4;
+        data[i]     = gray * 1.3; // R
+        data[i + 1] = gray * 0.7; // G
+        data[i + 2] = gray * 0.4; // B
       }
 
       ctx.putImageData(imageData, 0, 0);
@@ -45,12 +45,17 @@ window.addEventListener("DOMContentLoaded", () => {
       processedImageData = canvas.toDataURL("image/png");
     };
 
-    reader.readAsDataURL(file);
+    // IMPORTANT: reliable image loading
+    img.src = URL.createObjectURL(file);
   });
 
+  // -----------------------
+  // PUBLISH TO GALLERY
+  // -----------------------
   postBtn.addEventListener("click", () => {
+
     if (!processedImageData) {
-      alert("carica prima un'immagine");
+      alert("prima carica un'immagine");
       return;
     }
 
@@ -59,8 +64,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     gallery.prepend(img);
 
+    // reset
     processedImageData = null;
     upload.value = "";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   });
 
 });
