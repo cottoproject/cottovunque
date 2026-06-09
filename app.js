@@ -1,23 +1,64 @@
 window.addEventListener("DOMContentLoaded", () => {
 
+  // -------------------------
+  // SUPABASE INIT
+  // -------------------------
+  const supabase = window.supabase.createClient(
+    "YOUR_SUPABASE_URL",
+    "YOUR_SUPABASE_ANON_KEY"
+  );
+
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
   const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
 
-  let processedImageData = null;
+  let processedBlob = null;
 
   // -------------------------
-  // UPLOAD + YOUR FILTER
+  // LOAD IMAGES FROM BUCKET
+  // -------------------------
+  async function loadImages() {
+
+    gallery.innerHTML = "";
+
+    const { data, error } = await supabase.storage
+      .from("bucket")
+      .list("", { limit: 100 });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    for (const file of data) {
+
+      const { data: urlData } = supabase.storage
+        .from("bucket")
+        .getPublicUrl(file.name);
+
+      const img = document.createElement("img");
+      img.src = urlData.publicUrl;
+
+      gallery.prepend(img);
+    }
+  }
+
+  loadImages();
+
+  // -------------------------
+  // UPLOAD + FILTER
   // -------------------------
   upload.addEventListener("change", function (e) {
+
     const file = e.target.files[0];
     if (!file) return;
 
     const img = new Image();
 
     img.onload = function () {
+
       canvas.width = img.width;
       canvas.height = img.height;
 
@@ -37,6 +78,7 @@ window.addEventListener("DOMContentLoaded", () => {
       let c = contrast / 100;
 
       for (let i = 0; i < data.length; i += 4) {
+
         let r = data[i];
         let g = data[i + 1];
         let b = data[i + 2];
@@ -58,65 +100,64 @@ window.addEventListener("DOMContentLoaded", () => {
         mid /= total;
         highlight /= total;
 
-        const shadowR = 100;
-        const shadowG = 65;
-        const shadowB = 45;
+        const shadowR = 100, shadowG = 65, shadowB = 45;
+        const midR = 225, midG = 125, midB = 70;
+        const highlightR = 255, highlightG = 255, highlightB = 255;
 
-        const midR = 225;
-        const midG = 125;
-        const midB = 70;
-
-        const highlightR = 255;
-        const highlightG = 255;
-        const highlightB = 255;
-
-        let rr =
+        data[i] =
           shadowR * shadow +
           midR * mid +
           highlightR * highlight;
 
-        let gg =
+        data[i + 1] =
           shadowG * shadow +
           midG * mid +
           highlightG * highlight;
 
-        let bb =
+        data[i + 2] =
           shadowB * shadow +
           midB * mid +
           highlightB * highlight;
-
-        data[i] = rr;
-        data[i + 1] = gg;
-        data[i + 2] = bb;
       }
 
       ctx.putImageData(imageData, 0, 0);
 
-      // save for posting
-      processedImageData = canvas.toDataURL("image/png");
+      // convert to blob for upload
+      canvas.toBlob((blob) => {
+        processedBlob = blob;
+      }, "image/png");
+
     };
 
     img.src = URL.createObjectURL(file);
   });
 
   // -------------------------
-  // POST TO GALLERY
+  // POST (UPLOAD TO SUPABASE)
   // -------------------------
-  postBtn.addEventListener("click", () => {
+  postBtn.addEventListener("click", async () => {
 
-    if (!processedImageData) {
+    if (!processedBlob) {
       alert("carica prima un'immagine");
       return;
     }
 
-    const img = document.createElement("img");
-    img.src = processedImageData;
+    const fileName = `${Date.now()}.png`;
 
-    gallery.prepend(img);
+    const { error } = await supabase.storage
+      .from("bucket")
+      .upload(fileName, processedBlob);
 
-    processedImageData = null;
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    processedBlob = null;
     upload.value = "";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    loadImages();
   });
 
 });
