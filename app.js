@@ -4,7 +4,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // SUPABASE SETUP
   // =========================
   const SUPABASE_URL = "https://bflcyezzkzxvkfgvudop.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_9y3gld65Q8pjdXUuEtQatw_9nC8RDnS";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM";
 
   const supabase = window.supabase.createClient(
     SUPABASE_URL,
