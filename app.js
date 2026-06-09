@@ -5,6 +5,7 @@ window.addEventListener("DOMContentLoaded", () => {
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM"
   );
 
+
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -14,43 +15,36 @@ window.addEventListener("DOMContentLoaded", () => {
   let imageReady = false;
 
   // -------------------------
-  // LOAD IMAGES
+  // LOAD IMAGES (MOBILE SAFE)
   // -------------------------
-  async function loadImages() {
+  function loadImages() {
 
     gallery.innerHTML = "";
 
-    const { data, error } = await supabase.storage
-      .from("bucket")
-      .list("", {
-        limit: 100,
-        sortBy: { column: "created_at", order: "desc" }
-      });
+    let images = JSON.parse(localStorage.getItem("images") || "[]");
 
-    if (error) {
-      console.error("LIST ERROR:", error);
+    if (images.length === 0) {
       return;
     }
 
-    for (const file of data) {
+    images.forEach((fileName) => {
 
-      if (!file.name) continue;
-
-      const { data: urlData } = supabase.storage
+      const { data } = supabase.storage
         .from("bucket")
-        .getPublicUrl(file.name);
+        .getPublicUrl(fileName);
+
+      if (!data?.publicUrl) return;
 
       const img = document.createElement("img");
+      img.src = data.publicUrl;
 
-      img.src = urlData.publicUrl;
-
-      // 🔥 elimina immagini rotte (niente quadrati bianchi)
+      // elimina immagini rotte
       img.onerror = () => {
         img.remove();
       };
 
       gallery.appendChild(img);
-    }
+    });
   }
 
   loadImages();
@@ -67,7 +61,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     img.onload = function () {
 
-      // 🔥 RESIZE più aggressivo (max 1000px)
+      // 🔥 resize aggressivo per mobile
       const maxSize = 1000;
       let width = img.width;
       let height = img.height;
@@ -150,7 +144,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // -------------------------
-  // UPLOAD TO SUPABASE (ULTRA COMPRESSED)
+  // UPLOAD TO SUPABASE
   // -------------------------
   postBtn.addEventListener("click", async () => {
 
@@ -173,8 +167,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const { data, error } = await supabase.storage
         .from("bucket")
         .upload(fileName, blob, {
-          contentType: "image/jpeg",
-          upsert: false
+          contentType: "image/jpeg"
         });
 
       if (error) {
@@ -185,13 +178,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
       console.log("UPLOAD OK");
 
+      // salva lista locale (fix mobile)
+      let images = JSON.parse(localStorage.getItem("images") || "[]");
+      images.unshift(fileName);
+      localStorage.setItem("images", JSON.stringify(images));
+
       imageReady = false;
       upload.value = "";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       loadImages();
 
-    }, "image/jpeg", 0.55); // 🔥 compressione forte (55%)
+    }, "image/jpeg", 0.55);
 
   });
 
