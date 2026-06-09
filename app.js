@@ -135,40 +135,38 @@ window.addEventListener("DOMContentLoaded", () => {
   // -------------------------
   // POST (UPLOAD TO SUPABASE)
   // -------------------------
-postBtn.addEventListener("click", async () => {
 
-  if (!canvas.width || !canvas.height) {
-    alert("carica prima un'immagine");
-    return;
-  }
 
-  canvas.toBlob(async (blob) => {
 
-    if (!blob) {
-      alert("errore immagine");
+  // ... tutto il tuo codice sopra ...
+
+  postBtn.addEventListener("click", async () => {
+
+    if (!canvas.width || !canvas.height) {
+      alert("carica prima un'immagine");
       return;
     }
 
-    const fileName = `${Date.now()}.png`;
+    canvas.toBlob(async (blob) => {
 
-    console.log("UPLOAD START");
+      if (!blob) return;
 
-    const { data, error } = await supabase.storage
-      .from("bucket")
-      .upload(fileName, blob);
+      const fileName = `${Date.now()}.png`;
 
-    if (error) {
-      console.error("UPLOAD ERROR:", error);
-      alert(error.message);
-      return;
-    }
+      const { error } = await supabase.storage
+        .from("bucket")
+        .upload(fileName, blob);
 
-    console.log("UPLOAD OK");
+      if (error) {
+        console.error(error);
+        return;
+      }
 
-    loadImages();
+      loadImages();
 
-    upload.value = "";
+    }, "image/png");
 
-  }, "image/png");
+  });
 
 });
+
