@@ -21,43 +21,31 @@ window.addEventListener("DOMContentLoaded", () => {
   // -------------------------
   async function loadImages() {
 
-    gallery.innerHTML = "";
+  gallery.innerHTML = "";
 
-    const { data, error } = await supabase.storage
-      .from("bucket")
-      .list("", {
-        limit: 100,
-        sortBy: { column: "created_at", order: "desc" }
-      });
-
-    if (error) {
-      console.error("LIST ERROR:", error);
-      return;
-    }
-
-    if (!data || data.length === 0) return;
-
-    data.forEach(file => {
-
-      if (!file?.name) return;
-
-      const { data: urlData } = supabase.storage
-        .from("bucket")
-        .getPublicUrl(file.name);
-
-      if (!urlData?.publicUrl) return;
-
-      const img = document.createElement("img");
-      img.src = urlData.publicUrl;
-
-      // elimina immagini rotte
-      img.onerror = () => {
-        img.remove();
-      };
-
-      gallery.prepend(img);
+  const { data, error } = await supabase.storage
+    .from("bucket")
+    .list("", {
+      limit: 100
     });
-  }
+
+  if (error || !data) return;
+
+  // 🔥 INVERTI QUI
+  const sorted = data.reverse();
+
+  sorted.forEach(file => {
+
+    const { data: urlData } = supabase.storage
+      .from("bucket")
+      .getPublicUrl(file.name);
+
+    const img = document.createElement("img");
+    img.src = urlData.publicUrl;
+
+    gallery.appendChild(img); // normale append
+  });
+}
 
   loadImages();
 
