@@ -34,18 +34,24 @@ window.addEventListener("DOMContentLoaded", () => {
   // 🔥 INVERTI QUI
   const sorted = data.reverse();
 
-  sorted.forEach(file => {
+  data.forEach(file => {
 
-    const { data: urlData } = supabase.storage
-      .from("bucket")
-      .getPublicUrl(file.name);
+  if (!file?.name) return;
 
-    const img = document.createElement("img");
-    img.src = urlData.publicUrl;
+  const { data: urlData } = supabase.storage
+    .from("bucket")
+    .getPublicUrl(file.name);
 
-    gallery.appendChild(img); // normale append
-  });
-}
+  if (!urlData?.publicUrl) return;
+
+  const img = document.createElement("img");
+  img.src = urlData.publicUrl;
+
+  // elimina immagini rotte (box bianchi)
+  img.onerror = () => img.remove();
+
+  gallery.appendChild(img);
+});
 
   loadImages();
 
