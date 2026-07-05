@@ -12,7 +12,7 @@ body {
   padding: 80px 24px;
 }
 
-/* MAIN TITLE — strong typographic presence */
+/* MAIN TITLE */
 .title {
   font-size: clamp(64px, 8vw, 110px);
   font-weight: 900;
@@ -22,7 +22,7 @@ body {
   color: #c65a2e;
 }
 
-/* MANIFESTO — slanted editorial feel */
+/* MANIFESTO */
 .manifesto {
   font-family: "Times New Roman", serif;
   font-style: italic;
@@ -34,7 +34,7 @@ body {
   margin: 0 0 50px 0;
 }
 
-/* CTA — softer, human, handwritten contrast */
+/* CTA */
 .cta {
   font-family: "Brush Script MT", cursive;
   font-size: 26px;
@@ -42,8 +42,7 @@ body {
   opacity: 0.9;
 }
 
-/* aboves titles, under uploads */
-
+/* upload */
 .upload-section {
   margin-top: 60px;
 }
@@ -59,18 +58,47 @@ canvas {
   border: 1px solid rgba(198, 90, 46, 0.3);
 }
 
-/* gallery */
+/* =========================
+   MASONRY GALLERY (FIXED)
+   ========================= */
+
 .gallery {
   margin-top: 80px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
+
+  column-count: 3;
+  column-gap: 12px;
 }
 
 .gallery img {
   width: 100%;
+  height: auto;
+
   display: block;
+  margin-bottom: 12px;
+
+  break-inside: avoid;
+  border-radius: 4px;
 }
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+  .gallery {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery {
+    column-count: 1;
+  }
+}
+
+/* =========================
+   ABOUT BUTTON
+   ========================= */
 
 .about-btn {
   position: fixed;
@@ -80,13 +108,14 @@ canvas {
   padding: 10px 14px;
   background: orange !important;
   color: white;
-  border: none;
-  border-radius: 8px;
+  text-decoration: none;
 
+  border-radius: 8px;
   cursor: pointer;
   z-index: 9999;
 }
 
+/* ABOUT LINKS */
 .about-links {
   display: flex;
   gap: 100px;
