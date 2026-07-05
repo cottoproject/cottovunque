@@ -59,7 +59,7 @@ canvas {
 }
 
 /* =========================
-   MASONRY GALLERY (FIXED)
+   MASONRY GALLERY
    ========================= */
 
 .gallery {
@@ -80,10 +80,7 @@ canvas {
   border-radius: 4px;
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
-
+/* RESPONSIVE */
 @media (max-width: 900px) {
   .gallery {
     column-count: 2;
@@ -97,7 +94,7 @@ canvas {
 }
 
 /* =========================
-   ABOUT BUTTON
+   ABOUT BUTTON (FORZATO ARANCIONE)
    ========================= */
 
 .about-btn {
@@ -106,13 +103,23 @@ canvas {
   right: 15px;
 
   padding: 10px 14px;
-  background: orange !important;
-  color: white;
-  text-decoration: none;
 
-  border-radius: 8px;
+  background: #ff7a00 !important;
+  color: #ffffff !important;
+
+  text-decoration: none !important;
+
+  border-radius: 999px;
   cursor: pointer;
+
   z-index: 9999;
+
+  transition: 0.2s ease;
+}
+
+.about-btn:hover {
+  background: #e96d00 !important;
+  transform: scale(1.05);
 }
 
 /* ABOUT LINKS */
