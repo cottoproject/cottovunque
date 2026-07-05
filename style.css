@@ -71,3 +71,18 @@ canvas {
   width: 100%;
   display: block;
 }
+
+.about-btn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+
+  padding: 10px 14px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+
+  cursor: pointer;
+  z-index: 9999;
+}
