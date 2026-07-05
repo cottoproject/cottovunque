@@ -33,6 +33,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (!data) return;
+
     data.forEach(file => {
 
       if (!file?.name) return;
@@ -53,7 +55,7 @@ window.addEventListener("DOMContentLoaded", () => {
   loadImages();
 
   // -------------------------
-  // MULTI IMAGE SELECT
+  // MULTI FILE INPUT
   // -------------------------
   upload.addEventListener("change", async (e) => {
 
@@ -67,11 +69,11 @@ window.addEventListener("DOMContentLoaded", () => {
       processedImages.push(blob);
     }
 
-    alert(`${processedImages.length} immagini pronte per l'upload`);
+    alert(`${processedImages.length} immagini pronte`);
   });
 
   // -------------------------
-  // IMAGE PROCESSING (FIXED CANVAS PER FILE)
+  // IMAGE PROCESSING (FIXED)
   // -------------------------
   function processImage(file) {
 
@@ -106,14 +108,13 @@ window.addEventListener("DOMContentLoaded", () => {
         const data = imageData.data;
 
         const contrast = 130;
+        const c = contrast / 100;
 
         const applyContrast = (v, c) => {
           v /= 255;
-          v = (v - 0.5) * (1 + c * 2.0) + 0.5;
+          v = (v - 0.5) * (1 + c * 2) + 0.5;
           return Math.min(1, Math.max(0, v));
         };
-
-        const c = contrast / 100;
 
         for (let i = 0; i < data.length; i += 4) {
 
@@ -144,9 +145,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         ctx.putImageData(imageData, 0, 0);
 
-        canvas.toBlob((blob) => {
-          resolve(blob);
-        }, "image/jpeg", 0.55);
+        canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.55);
 
       };
 
@@ -156,33 +155,33 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // -------------------------
-  // UPLOAD MULTIPLE IMAGES
+  // UPLOAD MULTIPLE (PARALLEL)
   // -------------------------
   postBtn.addEventListener("click", async () => {
 
     if (!processedImages.length) {
-      alert("Seleziona prima delle immagini");
+      alert("Seleziona delle immagini");
       return;
     }
 
     postBtn.disabled = true;
 
-    for (let i = 0; i < processedImages.length; i++) {
-
-      const blob = processedImages[i];
+    const uploads = processedImages.map((blob, i) => {
 
       const fileName = `${Date.now()}_${i}_${Math.random().toString(16).slice(2)}.jpg`;
 
-      const { error } = await supabase.storage
+      return supabase.storage
         .from("bucket")
         .upload(fileName, blob, {
           contentType: "image/jpeg"
+        })
+        .then(({ error }) => {
+          if (error) console.error("UPLOAD ERROR:", error);
         });
 
-      if (error) {
-        console.error("UPLOAD ERROR:", error);
-      }
-    }
+    });
+
+    await Promise.all(uploads);
 
     processedImages = [];
     upload.value = "";
