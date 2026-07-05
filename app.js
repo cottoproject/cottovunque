@@ -5,9 +5,6 @@ window.addEventListener("DOMContentLoaded", () => {
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmbGN5ZXp6a3p4dmtmZ3Z1ZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDc1NTQsImV4cCI6MjA5NjU4MzU1NH0.4CiavWmychV7rL2LuPnwNMKyNxWKvFWPIHIhyOjzmjM"
   );
 
-
- 
-
   const upload = document.getElementById("upload");
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -17,46 +14,46 @@ window.addEventListener("DOMContentLoaded", () => {
   let imageReady = false;
 
   // -------------------------
-  // LOAD IMAGES (GLOBAL SUPABASE)
+  // LOAD IMAGES
   // -------------------------
   async function loadImages() {
 
-  gallery.innerHTML = "";
+    gallery.innerHTML = "";
 
-  const { data, error } = await supabase.storage
-    .from("bucket")
-    .list("", {
-      limit: 100
+    const { data, error } = await supabase.storage
+      .from("bucket")
+      .list("", {
+        limit: 100
+      });
+
+    if (error || !data) return;
+
+    // inverti ordine (nuove sopra)
+    const sorted = data.reverse();
+
+    sorted.forEach(file => {
+
+      if (!file?.name) return;
+
+      const { data: urlData } = supabase.storage
+        .from("bucket")
+        .getPublicUrl(file.name);
+
+      if (!urlData?.publicUrl) return;
+
+      const img = document.createElement("img");
+      img.src = urlData.publicUrl;
+
+      img.onerror = () => img.remove();
+
+      gallery.appendChild(img);
     });
-
-  if (error || !data) return;
-
-  // 🔥 INVERTI QUI
-  const sorted = data.reverse();
-
-  data.forEach(file => {
-
-  if (!file?.name) return;
-
-  const { data: urlData } = supabase.storage
-    .from("bucket")
-    .getPublicUrl(file.name);
-
-  if (!urlData?.publicUrl) return;
-
-  const img = document.createElement("img");
-  img.src = urlData.publicUrl;
-
-  // elimina immagini rotte (box bianchi)
-  img.onerror = () => img.remove();
-
-  gallery.appendChild(img);
-});
+  }
 
   loadImages();
 
   // -------------------------
-  // UPLOAD + FILTER + COMPRESSION
+  // UPLOAD + EDIT
   // -------------------------
   upload.addEventListener("change", function (e) {
 
@@ -67,7 +64,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     img.onload = function () {
 
-      // 🔥 resize max 1000px (compressione base)
       const maxSize = 1000;
       let width = img.width;
       let height = img.height;
@@ -89,14 +85,13 @@ window.addEventListener("DOMContentLoaded", () => {
       let data = imageData.data;
 
       let contrast = 130;
+      let c = contrast / 100;
 
       function applyContrast(v, c) {
         v = v / 255;
         v = (v - 0.5) * (1 + c * 2.0) + 0.5;
         return Math.min(1, Math.max(0, v));
       }
-
-      let c = contrast / 100;
 
       for (let i = 0; i < data.length; i += 4) {
 
@@ -161,28 +156,20 @@ window.addEventListener("DOMContentLoaded", () => {
 
     canvas.toBlob(async (blob) => {
 
-      if (!blob) {
-        alert("errore creazione immagine");
-        return;
-      }
+      if (!blob) return;
 
       const fileName = `${Date.now()}.jpg`;
 
-      console.log("UPLOAD START");
-
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("bucket")
         .upload(fileName, blob, {
           contentType: "image/jpeg"
         });
 
       if (error) {
-        console.error("UPLOAD ERROR:", error);
         alert(error.message);
         return;
       }
-
-      console.log("UPLOAD OK");
 
       imageReady = false;
       upload.value = "";
