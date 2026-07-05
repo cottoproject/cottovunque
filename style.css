@@ -19,14 +19,14 @@ body {
   letter-spacing: -0.04em;
   line-height: 0.9;
   margin: 0 0 40px 0;
-  color: #c65a2e;
+ 
    /* glitter effect */
   background: linear-gradient(
     90deg,
-    #ff7a00,
-    #ffffff,
+    #c65a2e,
+    #f4b49a,
     #ffb347,
-    #ff7a00
+    #c65a2e
   );
 
   background-size: 300% 100%;
