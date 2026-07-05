@@ -86,3 +86,8 @@ canvas {
   cursor: pointer;
   z-index: 9999;
 }
+
+.about-links {
+  display: flex;
+  gap: 20px;
+}
