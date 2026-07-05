@@ -78,7 +78,7 @@ canvas {
   right: 15px;
 
   padding: 10px 14px;
-  background: orange;
+  background: orange !important;
   color: white;
   border: none;
   border-radius: 8px;
