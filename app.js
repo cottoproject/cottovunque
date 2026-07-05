@@ -6,18 +6,14 @@ window.addEventListener("DOMContentLoaded", () => {
   );
 
   const upload = document.getElementById("upload");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
   const gallery = document.getElementById("gallery");
   const postBtn = document.getElementById("postBtn");
 
-  // conterrà tutte le immagini elaborate
   let processedImages = [];
 
   // -------------------------
-  // CARICA GALLERIA
+  // LOAD IMAGES
   // -------------------------
-
   async function loadImages() {
 
     gallery.innerHTML = "";
@@ -33,52 +29,50 @@ window.addEventListener("DOMContentLoaded", () => {
       });
 
     if (error) {
-      console.error(error);
+      console.error("LIST ERROR:", error);
       return;
     }
 
     data.forEach(file => {
 
-      const { data: url } = supabase.storage
+      if (!file?.name) return;
+
+      const { data: urlData } = supabase.storage
         .from("bucket")
         .getPublicUrl(file.name);
 
       const img = document.createElement("img");
-
-      img.src = url.publicUrl;
+      img.src = urlData.publicUrl;
 
       img.onerror = () => img.remove();
 
       gallery.appendChild(img);
-
     });
-
   }
 
   loadImages();
 
   // -------------------------
-  // ELABORAZIONE MULTIPLA
+  // MULTI IMAGE SELECT
   // -------------------------
-
   upload.addEventListener("change", async (e) => {
 
     const files = [...e.target.files];
-
     if (!files.length) return;
 
     processedImages = [];
 
     for (const file of files) {
-
-      await processImage(file);
-
+      const blob = await processImage(file);
+      processedImages.push(blob);
     }
 
-    alert(processedImages.length + " immagini pronte.");
-
+    alert(`${processedImages.length} immagini pronte per l'upload`);
   });
 
+  // -------------------------
+  // IMAGE PROCESSING (FIXED CANVAS PER FILE)
+  // -------------------------
   function processImage(file) {
 
     return new Promise((resolve) => {
@@ -87,21 +81,20 @@ window.addEventListener("DOMContentLoaded", () => {
 
       img.onload = () => {
 
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
         const maxSize = 1000;
 
         let width = img.width;
         let height = img.height;
 
         if (width > height && width > maxSize) {
-
           height *= maxSize / width;
           width = maxSize;
-
         } else if (height > maxSize) {
-
           width *= maxSize / height;
           height = maxSize;
-
         }
 
         canvas.width = width;
@@ -110,20 +103,15 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.drawImage(img, 0, 0, width, height);
 
         const imageData = ctx.getImageData(0, 0, width, height);
-
         const data = imageData.data;
 
-        let contrast = 130;
+        const contrast = 130;
 
-        function applyContrast(v, c) {
-
+        const applyContrast = (v, c) => {
           v /= 255;
-
           v = (v - 0.5) * (1 + c * 2.0) + 0.5;
-
           return Math.min(1, Math.max(0, v));
-
-        }
+        };
 
         const c = contrast / 100;
 
@@ -134,50 +122,30 @@ window.addEventListener("DOMContentLoaded", () => {
           const b = data[i + 2];
 
           const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
           const x = applyContrast(lum, c);
 
-          let highlight = Math.max(0, (x - 0.78) / 0.22);
           let shadow = Math.pow(1 - x, 2.5);
           let mid = 1 - Math.abs(x - 0.5) * 2;
-
-          mid = Math.max(0, mid);
+          let highlight = Math.max(0, (x - 0.78) / 0.22);
 
           shadow *= 0.35;
           mid *= 1.8;
-          highlight *= 1.0;
 
           const total = shadow + mid + highlight;
 
-          shadow /= total;
-          mid /= total;
-          highlight /= total;
+          const s = shadow / total;
+          const m = mid / total;
+          const h = highlight / total;
 
-          data[i] =
-            100 * shadow +
-            225 * mid +
-            255 * highlight;
-
-          data[i + 1] =
-            65 * shadow +
-            125 * mid +
-            255 * highlight;
-
-          data[i + 2] =
-            45 * shadow +
-            70 * mid +
-            255 * highlight;
-
+          data[i]     = 100 * s + 225 * m + 255 * h;
+          data[i + 1] = 65  * s + 125 * m + 255 * h;
+          data[i + 2] = 45  * s + 70  * m + 255 * h;
         }
 
         ctx.putImageData(imageData, 0, 0);
 
         canvas.toBlob((blob) => {
-
-          processedImages.push(blob);
-
-          resolve();
-
+          resolve(blob);
         }, "image/jpeg", 0.55);
 
       };
@@ -185,21 +153,16 @@ window.addEventListener("DOMContentLoaded", () => {
       img.src = URL.createObjectURL(file);
 
     });
-
   }
 
   // -------------------------
-  // UPLOAD MULTIPLO
+  // UPLOAD MULTIPLE IMAGES
   // -------------------------
-
   postBtn.addEventListener("click", async () => {
 
-    if (processedImages.length === 0) {
-
-      alert("Seleziona delle immagini.");
-
+    if (!processedImages.length) {
+      alert("Seleziona prima delle immagini");
       return;
-
     }
 
     postBtn.disabled = true;
@@ -208,11 +171,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const blob = processedImages[i];
 
-      const fileName =
-        Date.now() +
-        "_" +
-        i +
-        ".jpg";
+      const fileName = `${Date.now()}_${i}_${Math.random().toString(16).slice(2)}.jpg`;
 
       const { error } = await supabase.storage
         .from("bucket")
@@ -221,25 +180,18 @@ window.addEventListener("DOMContentLoaded", () => {
         });
 
       if (error) {
-
-        console.error(error);
-
+        console.error("UPLOAD ERROR:", error);
       }
-
     }
 
     processedImages = [];
-
     upload.value = "";
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     await loadImages();
 
     postBtn.disabled = false;
 
-    alert("Upload completato.");
-
+    alert("Upload completato!");
   });
 
 });
