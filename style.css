@@ -55,6 +55,16 @@ body {
   font-size: 26px;
   margin-top: 30px;
   opacity: 0.9;
+
+  .cta {
+  font-family: "Brush Script MT", cursive;
+  font-size: 26px;
+  margin-top: 30px;
+  opacity: 0.9;
+
+  display: inline-block; /* importante per animazioni */
+  animation: bounce 2s infinite ease-in-out;
+}
 }
 
 /* upload */
@@ -143,11 +153,24 @@ canvas {
   gap: 100px;
 }
 
+
+
 @keyframes glitterMove {
   0% {
     background-position: 0% 50%;
   }
   100% {
     background-position: 300% 50%;
+  }
+}
+
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
   }
 }
