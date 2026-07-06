@@ -5,22 +5,28 @@ body {
   font-family: system-ui, sans-serif;
 }
 
-/* layout */
+/* =========================
+   LAYOUT
+   ========================= */
+
 .container {
   max-width: 850px;
   margin: 0 auto;
   padding: 80px 24px;
 }
 
-/* MAIN TITLE */
+/* =========================
+   MAIN TITLE
+   ========================= */
+
 .title {
   font-size: clamp(64px, 8vw, 110px);
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 0.9;
-  margin: 0 0 40px 0;
- 
-   /* glitter effect */
+  margin: 0 0 40px;
+
+  /* Glitter effect */
   background: linear-gradient(
     90deg,
     #c65a2e,
@@ -32,42 +38,47 @@ body {
   background-size: 300% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 
   animation: glitterMove 3s linear infinite;
 }
-}
 
-/* MANIFESTO */
+/* =========================
+   MANIFESTO
+   ========================= */
+
 .manifesto {
   font-family: "Times New Roman", serif;
   font-style: italic;
   font-size: 20px;
   line-height: 1.7;
+
   max-width: 700px;
+
   transform: rotate(-3deg);
   opacity: 0.95;
+
   margin: 0 0 100px 120px;
 }
 
-/* CTA */
+/* =========================
+   CTA
+   ========================= */
+
 .cta {
   font-family: "Brush Script MT", cursive;
   font-size: 26px;
   margin-top: 30px;
   opacity: 0.9;
 
-  .cta {
-  font-family: "Brush Script MT", cursive;
-  font-size: 26px;
-  margin-top: 30px;
-  opacity: 0.9;
-
-  display: inline-block; /* importante per animazioni */
-  animation: bounce 2s infinite ease-in-out;
-}
+  display: inline-block;
+  animation: bounce 2s ease-in-out infinite;
 }
 
-/* upload */
+/* =========================
+   UPLOAD
+   ========================= */
+
 .upload-section {
   margin-top: 60px;
 }
@@ -105,21 +116,8 @@ canvas {
   border-radius: 4px;
 }
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .gallery {
-    column-count: 2;
-  }
-}
-
-@media (max-width: 600px) {
-  .gallery {
-    column-count: 1;
-  }
-}
-
 /* =========================
-   ABOUT BUTTON (FORZATO ARANCIONE)
+   ABOUT BUTTON
    ========================= */
 
 .about-btn {
@@ -129,44 +127,84 @@ canvas {
 
   padding: 10px 14px;
 
-  background: #ff7a00 !important;
-  color: #ffffff !important;
+  background: #ff7a00;
+  color: #ffffff;
 
-  text-decoration: none !important;
+  text-decoration: none;
 
   border-radius: 999px;
   cursor: pointer;
 
   z-index: 9999;
 
-  transition: 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .about-btn:hover {
-  background: #e96d00 !important;
+  background: #e96d00;
   transform: scale(1.05);
 }
 
-/* ABOUT LINKS */
+/* =========================
+   ABOUT LINKS
+   ========================= */
+
 .about-links {
   display: flex;
   gap: 100px;
 }
 
+/* =========================
+   RESPONSIVE
+   ========================= */
 
+@media (max-width: 900px) {
+  .gallery {
+    column-count: 2;
+  }
+
+  .manifesto {
+    margin-left: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery {
+    column-count: 1;
+  }
+
+  .container {
+    padding: 48px 20px;
+  }
+
+  .manifesto {
+    margin: 0 0 60px;
+    transform: none;
+    font-size: 18px;
+  }
+
+  .cta {
+    font-size: 22px;
+  }
+}
+
+/* =========================
+   ANIMATIONS
+   ========================= */
 
 @keyframes glitterMove {
-  0% {
+  from {
     background-position: 0% 50%;
   }
-  100% {
+
+  to {
     background-position: 300% 50%;
   }
 }
 
-
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
 
