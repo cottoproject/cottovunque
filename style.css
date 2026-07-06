@@ -3,30 +3,30 @@ body {
   background: #ffffff;
   color: #c65a2e;
   font-family: system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* =========================
-   LAYOUT
+   LAYOUT BASE
    ========================= */
 
 .container {
-  max-width: 850px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 80px 24px;
+  padding: 90px 24px;
 }
 
 /* =========================
-   MAIN TITLE
+   TITLE
    ========================= */
 
 .title {
-  font-size: clamp(64px, 8vw, 110px);
+  font-size: clamp(60px, 7vw, 110px);
   font-weight: 900;
   letter-spacing: -0.04em;
-  line-height: 0.9;
-  margin: 0 0 40px;
+  line-height: 1.05;
+  margin: 0 0 30px;
 
-  /* Glitter effect */
   background: linear-gradient(
     90deg,
     #c65a2e,
@@ -37,83 +37,107 @@ body {
 
   background-size: 300% 100%;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
 
   animation: glitterMove 3s linear infinite;
 }
 
 /* =========================
-   MANIFESTO
+   MANIFESTO (più pulito e centrato)
    ========================= */
 
 .manifesto {
   font-family: "Times New Roman", serif;
   font-style: italic;
-  font-size: 30px;
-  line-height: 1.7;
+  font-size: 20px;
+  line-height: 1.8;
 
-  max-width: 700px;
+  max-width: 650px;
+  margin: 0 auto 80px;
 
-  transform: rotate(-3deg);
+  text-align: left;
+
   opacity: 0.95;
-
-  margin: 50px 0 50px 120px;
 }
 
 /* =========================
-   CTA
+   CTA (più ordinata)
    ========================= */
 
 .cta {
   font-family: "Brush Script MT", cursive;
-  font-size: 26px;
-  margin-top: 30px;
+  font-size: 24px;
+  line-height: 1.6;
+
+  max-width: 650px;
+  margin: 0 auto 70px;
+
   opacity: 0.9;
 
-  display: inline-block;
-  animation: bounce 2s ease-in-out infinite;
+  display: block;
 }
 
 /* =========================
-   UPLOAD
+   UPLOAD SECTION
    ========================= */
 
 .upload-section {
-  margin-top: 60px;
+  margin-top: 40px;
+  text-align: center;
 }
 
 #upload {
-  margin-top: 20px;
+  margin: 20px auto;
 }
 
 canvas {
   display: block;
   margin: 20px auto;
   max-width: 100%;
-  border: 1px solid rgba(198, 90, 46, 0.3);
+  border: 1px solid rgba(198, 90, 46, 0.25);
+  border-radius: 6px;
+}
+
+/* BUTTON */
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #ff7a00;
+  color: white;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background: #e96d00;
+  transform: scale(1.05);
 }
 
 /* =========================
-   MASONRY GALLERY
+   GALLERY (più moderno)
    ========================= */
 
 .gallery {
   margin-top: 80px;
-
   column-count: 3;
-  column-gap: 12px;
+  column-gap: 14px;
 }
 
 .gallery img {
   width: 100%;
-  height: auto;
-
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 
+  border-radius: 6px;
   break-inside: avoid;
-  border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.gallery img:hover {
+  transform: scale(1.02);
 }
 
 /* =========================
@@ -122,36 +146,27 @@ canvas {
 
 .about-btn {
   position: fixed;
-  top: 15px;
-  right: 15px;
+  top: 18px;
+  right: 18px;
 
   padding: 10px 14px;
 
   background: #ff7a00;
-  color: #ffffff;
-
+  color: #fff;
   text-decoration: none;
 
   border-radius: 999px;
-  cursor: pointer;
+
+  font-size: 14px;
 
   z-index: 9999;
 
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: 0.2s ease;
 }
 
 .about-btn:hover {
   background: #e96d00;
   transform: scale(1.05);
-}
-
-/* =========================
-   ABOUT LINKS
-   ========================= */
-
-.about-links {
-  display: flex;
-  gap: 100px;
 }
 
 /* =========================
@@ -163,8 +178,8 @@ canvas {
     column-count: 2;
   }
 
-  .manifesto {
-    margin-left: 40px;
+  .container {
+    padding: 70px 20px;
   }
 }
 
@@ -173,18 +188,19 @@ canvas {
     column-count: 1;
   }
 
-  .container {
-    padding: 48px 20px;
+  .title {
+    font-size: 48px;
   }
 
-  .manifesto {
-    margin: 0 0 60px;
-    transform: none;
-    font-size: 18px;
+  .manifesto,
+  .cta {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .cta {
-    font-size: 22px;
+    font-size: 20px;
   }
 }
 
@@ -193,22 +209,10 @@ canvas {
    ========================= */
 
 @keyframes glitterMove {
-  from {
+  0% {
     background-position: 0% 50%;
   }
-
-  to {
-    background-position: 300% 50%;
-  }
-}
-
-@keyframes bounce {
-  0%,
   100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-8px);
+    background-position: 300% 50%;
   }
 }
